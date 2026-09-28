@@ -37,6 +37,7 @@ import org.multipaz.cbor.DataItem
 import org.multipaz.cbor.buildCborMap
 import org.multipaz.cbor.putCborMap
 import org.multipaz.cbor.toDataItemFullDate
+import org.multipaz.cbor.buildCborArray
 import org.multipaz.crypto.Algorithm
 import org.multipaz.crypto.EcPublicKey
 import org.multipaz.crypto.X509CertChain
@@ -45,6 +46,7 @@ import org.multipaz.webtoken.ChallengeInvalidException
 import org.multipaz.openid4vci.credential.CredentialFactoryRegistry
 import org.multipaz.openid4vci.customization.NonceManager
 import org.multipaz.openid4vci.util.IssuanceState
+import org.multipaz.openid4vci.util.MdlApplicantRepository
 import org.multipaz.openid4vci.util.OpaqueIdType
 import org.multipaz.openid4vci.util.authorizeWithDpop
 import org.multipaz.openid4vci.util.codeToId
@@ -339,29 +341,107 @@ private suspend fun readSystemOfRecord(
 ): DataItem {
     val systemOfRecordUrl = BackendEnvironment.getSystemOfRecordUrl()
     if (systemOfRecordUrl == null) {
-        // Running without System of Record (demo/dev mode). Expect basic data encoded
-        // as fake access token
-        val systemOfRecordAccess = state.systemOfRecordAccess!!
-        val (givenName, familyName, birthDate) = systemOfRecordAccess.accessToken.split(":")
+
+        val applicantId = state.applicantId
+            ?: throw IllegalStateException("No applicant associated with issuance state")
+
+        val applicant = MdlApplicantRepository.get(applicantId)
+
         return buildCborMap {
+
             putCborMap("core") {
-                put("given_name", givenName)
-                put("family_name", familyName)
-                put("birth_date", LocalDate.parse(birthDate).toDataItemFullDate())
+                put("given_name", applicant.givenName)
+                put("family_name", applicant.familyName)
+                put(
+                    "birth_date",
+                    LocalDate.parse(applicant.birthDate).toDataItemFullDate()
+                )
             }
+
             putCborMap("records") {
+
                 putCborMap("mDL") {
-                    putCborMap("") {}
+
+                    putCborMap("") {
+
+                        put(
+                            "document_number",
+                            applicant.documentNumber
+                        )
+
+                        put(
+                            "issue_date",
+                            LocalDate.parse(applicant.issueDate)
+                                .toDataItemFullDate()
+                        )
+
+                        put(
+                            "expiry_date",
+                            LocalDate.parse(applicant.expiryDate)
+                                .toDataItemFullDate()
+                        )
+
+                        put(
+                            "issuing_authority",
+                            applicant.issuingAuthority
+                        )
+
+                        put(
+                            "issuing_country",
+                            applicant.issuingCountry
+                        )
+
+                        put(
+                            "portrait",
+                            applicant.portrait.toByteArray()
+                        )
+
+                        put(
+                            "driving_privileges",
+                            buildCborArray {
+
+                                applicant.drivingPrivileges.forEach { privilege ->
+
+                                    add(
+                                        buildCborMap {
+
+                                            put(
+                                                "vehicle_category_code",
+                                                privilege.vehicleCategoryCode
+                                            )
+
+                                            put(
+                                                "issue_date",
+                                                LocalDate.parse(
+                                                    privilege.issueDate
+                                                ).toDataItemFullDate()
+                                            )
+
+                                            put(
+                                                "expiry_date",
+                                                LocalDate.parse(
+                                                    privilege.expiryDate
+                                                ).toDataItemFullDate()
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
                 putCborMap("naturalization") {
                     putCborMap("") {}
                 }
+
                 putCborMap("movie") {
                     putCborMap("") {}
                 }
+
                 putCborMap("wholesale") {
                     putCborMap("") {}
                 }
+
                 putCborMap("payment") {
                     putCborMap("") {}
                 }

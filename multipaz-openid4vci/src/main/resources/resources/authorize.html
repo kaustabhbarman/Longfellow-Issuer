@@ -1,23 +1,289 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Authorize</title>
+    <title>Digital Driving Licence Issuer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <link rel="stylesheet" href="style.css" />
+
+    <style>
+        .option {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+
+        .option:hover {
+            background-color: #f5f5f5;
+        }
+
+        .option h2 {
+            margin-top: 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #userForm {
+            display: none;
+        }
+
+        .field {
+            margin: 12px 0;
+        }
+
+        label {
+            display: inline-block;
+            min-width: 180px;
+        }
+
+        input {
+            padding: 6px;
+        }
+
+        .privileges {
+            margin-top: 15px;
+        }
+    </style>
+
+    <script>
+        function showUserForm() {
+            document.getElementById("selection").style.display = "none";
+            document.getElementById("userForm").style.display = "block";
+        }
+
+        function useFakeData() {
+            document.getElementById("fakeForm").submit();
+        }
+    </script>
 </head>
+
 <body>
+
 <div id="main">
-<h1>Tell us who you are</h1>
-<form action="authorize" method="post">
-    <input type="hidden" name="authorizationCode" value="$authorizationCode"/>
-    <label for="given_name">First name:</label>
-    <input type="text" id="given_name" name="given_name" value="Ivan"/><br/>
-    <label for="family_name">Last name:</label>
-    <input type="text" id="family_name" name="family_name" value="Ksiva"/><br/>
-    <label for="birth_date">Birth date:</label>
-    <input type="date" id="birth_date" name="birth_date" value="1998-09-04"/><br/>
-    <button>Verify</button>
-</form>
+
+    <!-- Selection screen -->
+    <div id="selection">
+
+        <h1>Digital Driving Licence Issuer</h1>
+
+        <h2>How do you want to issue the licence?</h2>
+
+        <div class="option" onclick="showUserForm()">
+            <h2>User Input</h2>
+            <p>Enter applicant details manually.</p>
+            <button type="button">Enter Applicant Details</button>
+        </div>
+
+        <div class="option">
+            <h2>Fake / Demo Details</h2>
+            <p>Use predefined test data for development and testing.</p>
+
+            <form id="fakeForm" action="authorize" method="post">
+
+                <input
+                    type="hidden"
+                    name="authorizationCode"
+                    value="$authorizationCode"
+                />
+
+                <input
+                    type="hidden"
+                    name="mode"
+                    value="fake"
+                />
+
+                <button type="button" onclick="useFakeData()">
+                    Use Demo Data
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+
+
+    <!-- User input screen -->
+    <div id="userForm">
+
+        <h1>Applicant Details</h1>
+
+        <form action="authorize" method="post" enctype="multipart/form-data">
+
+            <input
+                type="hidden"
+                name="authorizationCode"
+                value="$authorizationCode"
+            />
+
+            <input
+                type="hidden"
+                name="mode"
+                value="user"
+            />
+
+            <div class="field">
+                <label for="given_name">First name:</label>
+                <input
+                    type="text"
+                    id="given_name"
+                    name="given_name"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="family_name">Last name:</label>
+                <input
+                    type="text"
+                    id="family_name"
+                    name="family_name"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="birth_date">Date of birth:</label>
+                <input
+                    type="date"
+                    id="birth_date"
+                    name="birth_date"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="document_number">Licence number:</label>
+                <input
+                    type="text"
+                    id="document_number"
+                    name="document_number"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="issue_date">Issue date:</label>
+                <input
+                    type="date"
+                    id="issue_date"
+                    name="issue_date"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="expiry_date">Expiry date:</label>
+                <input
+                    type="date"
+                    id="expiry_date"
+                    name="expiry_date"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="issuing_authority">
+                    Issuing authority:
+                </label>
+                <input
+                    type="text"
+                    id="issuing_authority"
+                    name="issuing_authority"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="issuing_country">
+                    Issuing country:
+                </label>
+                <input
+                    type="text"
+                    id="issuing_country"
+                    name="issuing_country"
+                    value="DE"
+                    required
+                />
+            </div>
+
+            <div class="field">
+                <label for="portrait">Portrait:</label>
+                <input
+                    type="file"
+                    id="portrait"
+                    name="portrait"
+                    accept="image/*"
+                    required
+                />
+            </div>
+
+            <div class="privileges">
+
+                <strong>Driving privileges:</strong>
+
+                <div>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="driving_privileges"
+                            value="B"
+                        />
+                        B
+                    </label>
+                </div>
+
+                <div>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="driving_privileges"
+                            value="BE"
+                        />
+                        BE
+                    </label>
+                </div>
+
+                <div>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="driving_privileges"
+                            value="C"
+                        />
+                        C
+                    </label>
+                </div>
+
+                <div>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="driving_privileges"
+                            value="CE"
+                        />
+                        CE
+                    </label>
+                </div>
+
+            </div>
+
+            <br/>
+
+            <button type="submit">
+                Issue Driving Licence
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
+
 </body>
 </html>
