@@ -72,24 +72,24 @@
 
         <h1>Digital Driving Licence Issuer</h1>
 
-        <h2>How do you want to issue the licence?</h2>
+        <h2>Issue a Digital Driving Licence</h2>
+        <p>How should the applicant information be provided?</p>
 
         <div class="option" onclick="showUserForm()">
-            <h2>User Input</h2>
-            <p>Enter applicant details manually.</p>
-            <button type="button">Enter Applicant Details</button>
+            <h3>Enter Applicant Details</h3>
+            <p>Enter the applicant's information and upload a portrait.</p>
+            <button type="button">Continue</button>
         </div>
 
         <div class="option">
-            <h2>Fake / Demo Details</h2>
-            <p>Use predefined test data for development and testing.</p>
+            <h3>Use Demonstration Data</h3>
+            <p>Use predefined information for demonstration and testing purposes.</p>
 
             <form id="fakeForm" action="authorize" method="post">
 
                 <input
                     type="hidden"
-                    name="authorizationCode"
-                    value="$authorizationCode"
+                    name="authorizationCode" value="$authorizationCode"
                 />
 
                 <input
@@ -99,7 +99,7 @@
                 />
 
                 <button type="button" onclick="useFakeData()">
-                    Use Demo Data
+                    Continue
                 </button>
 
             </form>
@@ -111,14 +111,15 @@
     <!-- User input screen -->
     <div id="userForm">
 
-        <h1>Applicant Details</h1>
-
+        <h2>Applicant Information</h2>
+        <p>Enter the information required to issue the digital driving licence.</p>
+        
+        
         <form action="authorize" method="post" enctype="multipart/form-data">
 
             <input
                 type="hidden"
-                name="authorizationCode"
-                value="$authorizationCode"
+                name="authorizationCode" value="$authorizationCode"
             />
 
             <input
@@ -156,7 +157,7 @@
                     required
                 />
             </div>
-
+            <h3>Licence Information</h3>
             <div class="field">
                 <label for="document_number">Licence number:</label>
                 <input
@@ -213,7 +214,7 @@
             </div>
 
             <div class="field">
-                <label for="portrait">Portrait:</label>
+                <label for="portrait">Applicant Portrait:</label>
                 <input
                     type="file"
                     id="portrait"
@@ -225,7 +226,8 @@
 
             <div class="privileges">
 
-                <strong>Driving privileges:</strong>
+                <h3>Driving Privileges</h3>
+                <p>Select the vehicle categories authorized for the applicant.</p>
 
                 <div>
                     <label>
@@ -276,7 +278,7 @@
             <br/>
 
             <button type="submit">
-                Issue Driving Licence
+                Issue Digital Driving Licence
             </button>
 
         </form>

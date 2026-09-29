@@ -1,5 +1,6 @@
 package org.multipaz.openid4vci.request
 
+import io.ktor.server.request.contentType
 import io.ktor.utils.io.readAvailable
 import java.io.ByteArrayOutputStream
 import io.ktor.http.content.PartData
@@ -240,52 +241,61 @@ suspend fun authorizePost(call: ApplicationCall) {
 
     var portraitBytes: ByteArray? = null
 
-    val parameters = Parameters.build {
+    val parameters = if (
+        call.request.contentType().match(ContentType.MultiPart.FormData)
+    ) {
 
-        val multipart = call.receiveMultipart()
+        Parameters.build {
 
-        multipart.forEachPart { part ->
+            val multipart = call.receiveMultipart()
 
-            when (part) {
+            multipart.forEachPart { part ->
 
-                is PartData.FormItem -> {
-                    val name = part.name
+                when (part) {
 
-                    if (name != null) {
-                        append(name, part.value)
-                    }
-                }
+                    is PartData.FormItem -> {
+                        val name = part.name
 
-                is PartData.FileItem -> {
-
-                    if (part.name == "portrait") {
-                        val channel = part.provider()
-                        val buffer = ByteArray(64 * 1024)
-                        val output = ByteArrayOutputStream()
-
-                        while (true) {
-                            val count = channel.readAvailable(buffer)
-
-                            if (count == -1) {
-                                break
-                            }
-
-                            if (count > 0) {
-                                output.write(buffer, 0, count)
-                            }
+                        if (name != null) {
+                            append(name, part.value)
                         }
+                    }
 
-                        portraitBytes = output.toByteArray()
+                    is PartData.FileItem -> {
+
+                        if (part.name == "portrait") {
+                            val channel = part.provider()
+                            val buffer = ByteArray(64 * 1024)
+                            val output = ByteArrayOutputStream()
+
+                            while (true) {
+                                val count = channel.readAvailable(buffer)
+
+                                if (count == -1) {
+                                    break
+                                }
+
+                                if (count > 0) {
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+
+                            portraitBytes = output.toByteArray()
+                        }
+                    }
+
+                    else -> {
+                        // Ignore unsupported multipart parts
                     }
                 }
 
-                else -> {
-                    // Ignore unsupported multipart parts
-                }
+                part.dispose()
             }
-
-            part.dispose()
         }
+
+    } else {
+
+        call.receiveParameters()
     }
 
     val code = parameters["authorizationCode"]
