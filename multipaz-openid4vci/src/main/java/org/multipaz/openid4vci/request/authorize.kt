@@ -1,5 +1,11 @@
 package org.multipaz.openid4vci.request
 
+import io.ktor.server.request.contentType
+import io.ktor.utils.io.readAvailable
+import java.io.ByteArrayOutputStream
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.server.request.receiveMultipart
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -31,12 +37,14 @@ import org.multipaz.webtoken.buildJwt
 import org.multipaz.verifier.Openid4VpVerifierModel
 import org.multipaz.openid4vci.credential.CredentialFactoryRegistry
 import org.multipaz.openid4vci.util.AUTHZ_REQ
+import org.multipaz.openid4vci.util.DrivingPrivilege
 import org.multipaz.openid4vci.util.IssuanceState
+import org.multipaz.openid4vci.util.MdlApplicant
+import org.multipaz.openid4vci.util.MdlApplicantRepository
 import org.multipaz.openid4vci.util.MULTIPAZ_PRE_AUTHORIZE_URI
 import org.multipaz.openid4vci.util.OAUTH_REQUEST_URI_PREFIX
 import org.multipaz.openid4vci.util.OPENID4VP_REQUEST_URI_PREFIX
 import org.multipaz.openid4vci.util.OpaqueIdType
-import org.multipaz.openid4vci.util.SystemOfRecordAccess
 import org.multipaz.openid4vci.util.codeToId
 import org.multipaz.server.common.getBaseUrl
 import org.multipaz.openid4vci.util.getReaderIdentity
@@ -229,8 +237,67 @@ private suspend fun getOpenid4Vp(code: String, call: ApplicationCall) {
 /**
  * Handle user's authorization and redirect to `finish_authorization` endpoint.
  */
-suspend fun authorizePost(call: ApplicationCall)  {
-    val parameters = call.receiveParameters()
+suspend fun authorizePost(call: ApplicationCall) {
+
+    var portraitBytes: ByteArray? = null
+
+    val parameters = if (
+        call.request.contentType().match(ContentType.MultiPart.FormData)
+    ) {
+
+        Parameters.build {
+
+            val multipart = call.receiveMultipart()
+
+            multipart.forEachPart { part ->
+
+                when (part) {
+
+                    is PartData.FormItem -> {
+                        val name = part.name
+
+                        if (name != null) {
+                            append(name, part.value)
+                        }
+                    }
+
+                    is PartData.FileItem -> {
+
+                        if (part.name == "portrait") {
+                            val channel = part.provider()
+                            val buffer = ByteArray(64 * 1024)
+                            val output = ByteArrayOutputStream()
+
+                            while (true) {
+                                val count = channel.readAvailable(buffer)
+
+                                if (count == -1) {
+                                    break
+                                }
+
+                                if (count > 0) {
+                                    output.write(buffer, 0, count)
+                                }
+                            }
+
+                            portraitBytes = output.toByteArray()
+                        }
+                    }
+
+                    else -> {
+                        // Ignore unsupported multipart parts
+                    }
+                }
+
+                part.dispose()
+            }
+        }
+
+    } else {
+
+        call.receiveParameters()
+    }
+
     val code = parameters["authorizationCode"]
         ?: throw InvalidRequestException("'authorizationCode' missing")
     val id = codeToId(OpaqueIdType.AUTHORIZATION_STATE, code)
@@ -271,12 +338,43 @@ suspend fun authorizePost(call: ApplicationCall)  {
                 }
             }
         } else {
-            // No system of record, just make things up
-            state.systemOfRecordAccess = createFakeSystemOfRecordAccess(parameters)
+                // No external system of record.
+   	        // Create an applicant record locally for development/testing.
+    		val mode = parameters["mode"]
+                ?: throw InvalidRequestException("'mode' missing")
+
+            val applicant = when (mode) {
+
+                "fake" -> createFakeMdlApplicant(parameters)
+
+                "user" -> createUserMdlApplicant(
+                    parameters,
+                    portraitBytes
+                )
+
+                else -> throw InvalidRequestException("Invalid authorization mode")
+            }
+
+            val applicantId = MdlApplicantRepository.create(applicant)
+            state.applicantId = applicantId
         }
 
-        state.authorized = Clock.System.now()  // OK to issue authorization code
-        IssuanceState.updateIssuanceState(id, state, Clock.System.now() + timeout)
+        state.authorized = Clock.System.now()
+
+        Logger.i(
+            TAG,
+            "Authorization completed: " +
+                "mode=${parameters["mode"]}, " +
+                "clientId=${state.clientId}, " +
+                "redirectUri=${state.redirectUri}, " +
+                "applicantId=${state.applicantId}"
+        )
+
+        IssuanceState.updateIssuanceState(
+            id,
+            state,
+            Clock.System.now() + timeout
+        )
 
         call.respondRedirect("finish_authorization?state=$stateCode")
     } catch (err: CancellationException) {
@@ -301,24 +399,104 @@ suspend fun authorizePost(call: ApplicationCall)  {
         })
     }
 }
+private suspend fun createFakeMdlApplicant(
+    parameters: Parameters
+): MdlApplicant {
 
+    val resources = BackendEnvironment
+        .getInterface(Resources::class)!!
 
-/**
- * Creates [SystemOfRecordAccess] value for the (dev-only) path where no System of Record
- * is configured.
- */
-private fun createFakeSystemOfRecordAccess(parameters: Parameters): SystemOfRecordAccess {
-    val givenName = parameters["given_name"]
-    val familyName = parameters["family_name"]
-    val birthDate = parameters["birth_date"]
-    if (givenName.isNullOrBlank() || familyName.isNullOrBlank() || birthDate.isNullOrBlank()) {
-        throw AuthorizationFailed()
-    }
-    return SystemOfRecordAccess(
-        accessToken = "$givenName:$familyName:$birthDate",
-        accessTokenExpiration = Instant.DISTANT_FUTURE,
-        refreshToken = null
+    return MdlApplicant(
+        givenName = "Max",
+        familyName = "Mustermann",
+        birthDate = "1995-05-10",
+
+        portrait = ByteString(
+            resources.getRawResource("female.jpg")!!.toByteArray()
+        ),
+
+        documentNumber = "DL-DEMO-0001",
+        issueDate = "2026-01-01",
+        expiryDate = "2036-01-01",
+
+        issuingAuthority = "Demo Driving Licence Authority",
+        issuingCountry = "DE",
+
+        drivingPrivileges = listOf(
+            DrivingPrivilege(
+                vehicleCategoryCode = "B",
+                issueDate = "2026-01-01",
+                expiryDate = "2036-01-01"
+            )
+        )
     )
 }
+private suspend fun createUserMdlApplicant(
+    parameters: Parameters,
+    portraitBytes: ByteArray?
+): MdlApplicant {
 
+    val givenName = parameters["given_name"]
+        ?: throw InvalidRequestException("'given_name' missing")
+
+    val familyName = parameters["family_name"]
+        ?: throw InvalidRequestException("'family_name' missing")
+
+    val birthDate = parameters["birth_date"]
+        ?: throw InvalidRequestException("'birth_date' missing")
+
+    val documentNumber = parameters["document_number"]
+        ?: throw InvalidRequestException("'document_number' missing")
+
+    val issueDate = parameters["issue_date"]
+        ?: throw InvalidRequestException("'issue_date' missing")
+
+    val expiryDate = parameters["expiry_date"]
+        ?: throw InvalidRequestException("'expiry_date' missing")
+
+    val issuingAuthority = parameters["issuing_authority"]
+        ?: throw InvalidRequestException("'issuing_authority' missing")
+
+    val issuingCountry = parameters["issuing_country"]
+        ?: throw InvalidRequestException("'issuing_country' missing")
+
+    val privilegeCodes = parameters.getAll("driving_privileges")
+        ?: emptyList()
+
+    if (privilegeCodes.isEmpty()) {
+        throw InvalidRequestException(
+            "At least one driving privilege is required"
+        )
+    }
+
+    val portrait = ByteString(
+    portraitBytes
+        ?: throw InvalidRequestException("'portrait' missing")
+    )
+
+    val drivingPrivileges = privilegeCodes.map { categoryCode ->
+        DrivingPrivilege(
+            vehicleCategoryCode = categoryCode,
+            issueDate = issueDate,
+            expiryDate = expiryDate
+        )
+    }
+
+    return MdlApplicant(
+        givenName = givenName,
+        familyName = familyName,
+        birthDate = birthDate,
+
+        portrait = portrait,
+
+        documentNumber = documentNumber,
+        issueDate = issueDate,
+        expiryDate = expiryDate,
+
+        issuingAuthority = issuingAuthority,
+        issuingCountry = issuingCountry,
+
+        drivingPrivileges = drivingPrivileges
+    )
+}
 private class AuthorizationFailed: Exception("Authorization failed")

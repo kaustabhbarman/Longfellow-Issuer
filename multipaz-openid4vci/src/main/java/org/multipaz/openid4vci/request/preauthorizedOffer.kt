@@ -1,5 +1,9 @@
 package org.multipaz.openid4vci.request
 
+import org.multipaz.openid4vci.util.DrivingPrivilege
+import org.multipaz.openid4vci.util.MdlApplicant
+import org.multipaz.openid4vci.util.MdlApplicantRepository
+import org.multipaz.rpc.backend.Resources
 import io.ktor.http.ContentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receiveText
@@ -93,6 +97,41 @@ suspend fun preauthorizedOffer(call: ApplicationCall) {
                 continue
             }
             val txCode = txCodeSpec?.generateRandom()
+            val applicantId = if (scope == "mDL") {
+
+                val resources = BackendEnvironment
+                    .getInterface(Resources::class)!!
+
+                val applicant = MdlApplicant(
+                    givenName = "Max",
+                    familyName = "Mustermann",
+                    birthDate = "1995-05-10",
+
+                    portrait = ByteString(
+                        resources.getRawResource("female.jpg")!!.toByteArray()
+                    ),
+
+                    documentNumber = "DL-DEMO-0001",
+                    issueDate = "2026-01-01",
+                    expiryDate = "2036-01-01",
+
+                    issuingAuthority = "Demo Driving Licence Authority",
+                    issuingCountry = "DE",
+
+                    drivingPrivileges = listOf(
+                        DrivingPrivilege(
+                            vehicleCategoryCode = "B",
+                            issueDate = "2026-01-01",
+                            expiryDate = "2036-01-01"
+                        )
+                    )
+                )
+
+                MdlApplicantRepository.create(applicant)
+
+            } else {
+                null
+            }
             val state = IssuanceState(
                 clientId = null,
                 scope = scope,
@@ -102,6 +141,7 @@ suspend fun preauthorizedOffer(call: ApplicationCall) {
                 codeChallenge = null,
                 configurationId = configId,
                 authorized = Clock.System.now(),
+                applicantId = applicantId,
                 systemOfRecordAccess = access,
                 txCodeSpec = txCodeSpec,
                 txCodeHash = txCode?.let {

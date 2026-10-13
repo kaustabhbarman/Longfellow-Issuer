@@ -33,6 +33,7 @@ data class IssuanceState(
     var systemOfRecordAuthCode: String? = null,
     var systemOfRecordCodeVerifier: ByteString? = null,
     var systemOfRecordAccess: SystemOfRecordAccess? = null,
+    var applicantId: String? = null,
     var txCodeSpec: SecretCodeRequest? = null,
     var txCodeHash: ByteString? = null,
     val urlSchema: String? = null,  // for pre-authorized code generation

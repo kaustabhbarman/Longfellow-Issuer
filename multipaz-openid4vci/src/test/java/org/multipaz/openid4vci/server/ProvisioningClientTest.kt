@@ -208,11 +208,9 @@ class ProvisioningClientTest {
             var formRequest = httpClient.submitForm(
                 url = authorizationUrl.protocolWithAuthority + authorizationUrl.encodedPath,
                 formParameters = parameters {
-                    append("authorizationCode", authorizationCode)
-                    append("given_name", "Given")
-                    append("family_name", "Family")
-                    append("birth_date","1998-09-04")
-                }
+                append("authorizationCode", authorizationCode)
+                append("mode", "fake")
+            }
             )
 
             var location = ""
