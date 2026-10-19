@@ -212,6 +212,20 @@ function addHeader(issuance) {
     h1.className = "issuer_name";
     h1.textContent = issuance.display[0].name;
     header.appendChild(h1);
+    const downloadButton = document.createElement("a");
+    downloadButton.textContent = "Download Wallet App (APK)";
+    downloadButton.href = "https://dribble-lung-endless.ngrok-free.dev/wallet.apk";
+    downloadButton.className = "download-wallet-button";
+    downloadButton.style.display = "inline-block";
+    downloadButton.style.margin = "16px 0";
+    downloadButton.style.padding = "10px 16px";
+    downloadButton.style.backgroundColor = "#0d6efd";
+    downloadButton.style.color = "#ffffff";
+    downloadButton.style.textDecoration = "none";
+    downloadButton.style.borderRadius = "6px";
+    downloadButton.style.fontWeight = "600";
+    downloadButton.setAttribute("download", "wallet.apk");
+    header.appendChild(downloadButton);
 }
 
 async function fetchMetadata() {
