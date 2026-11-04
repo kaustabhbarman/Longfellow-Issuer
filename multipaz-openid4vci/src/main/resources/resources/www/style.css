@@ -1,101 +1,482 @@
+:root {
+    color-scheme: light;
+    --page-bg: #f4f7fb;
+    --surface: #ffffff;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #174ea6;
+    --primary-hover: #123f86;
+    --accent-bg: #edf4ff;
+    --radius: 16px;
+    --shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
 html {
-    background-color: #CFF;
-    height: 100%;
+    min-height: 100%;
+    background: var(--page-bg);
 }
 
 body {
-    max-width: 720px;
-    min-height: 100%;
-    margin: 0px auto;
-    background-color: white;
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    background: var(--page-bg);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
 }
 
-body.wide {
-    min-width: 800px;
-    max-width: 1320px;
+#main {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    padding: 28px 24px 56px;
 }
 
-div#main {
-    padding: 12px;
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.issuer-identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.issuer-logo {
+    display: block;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: white;
+}
+
+.issuer-identity-text {
+    min-width: 0;
+}
+
+.eyebrow {
+    margin: 0 0 4px;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.11em;
+    line-height: 1.5;
+}
+
+.issuer-name {
+    margin: 0;
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.text-link {
+    color: var(--primary);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.text-link:hover {
+    text-decoration: underline;
+}
+
+.page-intro,
+.detail-intro {
+    margin: 38px 0 26px;
+}
+
+.page-title {
+    margin: 6px 0 8px;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+}
+
+.page-description,
+.section-description {
+    max-width: 680px;
+    margin: 0;
+    color: var(--muted);
+}
+
+.credential-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.credential-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.credential-card:hover,
+.credential-card:focus-visible {
+    transform: translateY(-3px);
+    border-color: #b9cdf0;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+    outline: none;
+}
+
+.credential-card-art {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 28px;
+    background: linear-gradient(145deg, #edf4ff, #f8faff);
+}
+
+.credential-list-art {
+    display: block;
+    width: min(100%, 400px);
+    height: auto;
+    aspect-ratio: 400 / 253;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.credential-card-content {
+    padding: 24px;
+}
+
+.credential-card-title {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.credential-card-description {
+    min-height: 48px;
+    margin: 0 0 20px;
+    color: var(--muted);
+}
+
+.card-action {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.detail-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.detail-overview {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
+    gap: 28px;
+    align-items: center;
+    margin: 26px 0;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.detail-art {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+}
+
+.credential-detail-art {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.section-title {
+    margin: 0 0 10px;
+    font-size: 1.15rem;
+}
+
+.meta-row {
+    margin: 8px 0;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.panel {
+    margin: 22px 0;
+    padding: 26px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.panel > .section-description {
+    margin-bottom: 20px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+
+.button-primary {
+    color: white;
+    background: var(--primary);
+}
+
+.button-primary:hover {
+    background: var(--primary-hover);
+}
+
+.button-secondary {
+    color: var(--primary);
+    background: var(--accent-bg);
+    border-color: #d5e4ff;
+}
+
+.button-secondary:hover {
+    background: #e0ebff;
 }
 
 .qr {
     display: block;
-    margin-top: 1em;
-    width:200px;
+    width: 200px;
+    max-width: 100%;
+    height: auto;
+    margin: 22px 0 8px;
+    padding: 10px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    image-rendering: pixelated;
 }
 
-.paint img {
-    // assume pixel density is 2
-    width: 405px;
-    height: 205px;
-    margin-left: 32px;
+.helper-text {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 0.875rem;
 }
 
-.header {
-    border-bottom: 2px solid black
+.issuance-form {
+    display: grid;
+    gap: 10px;
+    max-width: 560px;
 }
 
-.issuer_logo {
-    max-height:3em;
-    float: right
-}
-
-.issuer_name {
-}
-
-.credential_list_item {
-    margin-top: 1em;
-}
-
-.credential_list_logo_container {
-    width: 4em;
-    display: inline-block;
-    text-align: end;
-    vertical-align: middle;
-}
-
-.credential_list_logo {
-    height: 1.5em;
-}
-
-.credential_list_name {
-}
-
-.credential_container {
-}
-
-.credential_logo {
+.form-label {
     display: block;
-    max-height: 120px;
-    max-width:200px;
+    margin-top: 8px;
+    font-weight: 650;
 }
 
-table {
-    border-collapse: collapse;
-    margin: 1em;
+.form-control {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 13px;
+    color: var(--text);
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font: inherit;
 }
 
-td, th {
-    border: 1px solid black;
-    padding: 8px;
+.form-control:focus {
+    border-color: var(--primary);
+    outline: 3px solid rgba(23, 78, 166, 0.13);
 }
 
-.cred {
-    margin-left: 1em;
+.field-group[hidden] {
+    display: none;
 }
 
-.cred h4 {
-    margin-bottom: 4px;
+.field-group {
+    margin: 12px 0;
 }
 
-span.label {
-    display: inline-block;
-    width: 8em;
-    text-align: right;
-    padding-right: 4px;
+.issuance-form .button-primary {
+    justify-self: start;
+    margin-top: 12px;
 }
 
-button {
-    margin-left: 1em;
+.error-panel {
+    margin-top: 28px;
+    padding: 22px;
+    color: #842029;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 12px;
+}
+
+.error-panel h2 {
+    margin-top: 0;
+}
+
+.status-message {
+    padding: 18px;
+    color: var(--muted);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+@media (max-width: 700px) {
+    #main {
+        padding: 18px 16px 36px;
+    }
+
+    .site-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .credential-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .credential-card-art {
+        min-height: 180px;
+        padding: 22px;
+    }
+
+    .detail-overview {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .panel {
+        padding: 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* Refined neutral theme */
+:root {
+    --page-bg: #f7f7f8;
+    --surface: #ffffff;
+    --text: #202124;
+    --muted: #626970;
+    --border: #e3e5e8;
+    --primary: #30343b;
+    --primary-hover: #17191d;
+    --accent-bg: #f1f2f4;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.035);
+}
+
+html,
+body {
+    background: var(--page-bg);
+}
+
+.eyebrow,
+.text-link,
+.card-action {
+    color: #42474f;
+}
+
+.credential-card-art {
+    background: #f1f2f3;
+}
+
+.button-primary {
+    background: #30343b;
+}
+
+.button-primary:hover {
+    background: #17191d;
+}
+
+.button-secondary {
+    color: #30343b;
+    background: #f1f2f4;
+    border-color: #e1e3e6;
+}
+
+.button-secondary:hover {
+    background: #e7e8ea;
+}
+
+.form-control:focus {
+    border-color: #737780;
+    outline: 3px solid rgba(80, 85, 95, 0.12);
+}
+
+/* Stable artwork sizing and issuer branding fallback */
+.credential-list-art,
+.credential-detail-art {
+    display: block;
+    width: 100%;
+    aspect-ratio: 8 / 5;
+    object-fit: contain;
+}
+
+.credential-list-art {
+    max-width: 400px;
+}
+
+.credential-detail-art {
+    max-width: 400px;
+}
+
+.credential-card-art,
+.detail-art {
+    min-width: 0;
+}
+
+.issuer-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    color: #fff;
+    background: #27364a;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.issuer-logo {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
 }
