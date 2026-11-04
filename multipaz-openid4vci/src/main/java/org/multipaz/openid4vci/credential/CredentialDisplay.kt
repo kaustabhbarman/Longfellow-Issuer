@@ -124,13 +124,22 @@ class CredentialDisplay(
                         val fieldValue = (command["field"] as? JsonPrimitive)?.let {
                             getField(systemOfRecordData, it.content)
                         }
-                        if (fieldValue is Bstr) {
-                            canvas.drawImage(ByteString(fieldValue.asBstr), command)
-                        } else {
-                            val image = (command["image"] as? JsonPrimitive)?.content
-                            if (image != null) {
-                                canvas.drawImage(image, command)
+
+                        val fallbackImage = (command["image"] as? JsonPrimitive)?.content
+
+                        val portraitDrawn = if (fieldValue is Bstr) {
+                            try {
+                                canvas.drawImage(ByteString(fieldValue.asBstr), command)
+                                true
+                            } catch (e: Exception) {
+                                false
                             }
+                        } else {
+                            false
+                        }
+
+                        if (!portraitDrawn && fallbackImage != null) {
+                            canvas.drawImage(fallbackImage, command)
                         }
                     }
                     else -> Logger.e(TAG, "Unknown cardArt operation: '${opName.content}'")

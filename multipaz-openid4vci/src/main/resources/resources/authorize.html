@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Digital Driving Licence Issuer</title>
+    <title id="pageTitle">Digital Driving Licence Issuer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="style.css" />
@@ -60,6 +60,64 @@
         function useFakeData() {
             document.getElementById("fakeForm").submit();
         }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            const credentialScope = "$credentialScope";
+            const isPid = credentialScope === "core";
+
+            if (isPid) {
+                document.title = "Personal ID Issuer";
+                document.getElementById("pageHeading").textContent = "Personal ID Issuer";
+                document.getElementById("issueHeading").textContent = "Issue a Personal ID";
+                document.getElementById("userOption").style.display = "block";
+                document.getElementById("userOption").querySelector("h3").textContent =
+                    "Enter Personal ID Details";
+                document.getElementById("userOption").querySelector("p").textContent =
+                    "Enter the applicant's personal information.";
+                document.getElementById("userFormHeading").textContent =
+                    "Personal ID Applicant Information";
+                document.getElementById("userFormDescription").textContent =
+                    "Enter the information required to issue the Personal ID.";
+                document.getElementById("submitButton").textContent =
+                    "Issue Personal ID";
+            }
+
+            const pidFields = document.getElementById("pidFields");
+            const mdlFields = document.getElementById("mdlFields");
+
+            pidFields.style.display = isPid ? "block" : "none";
+            mdlFields.style.display = isPid ? "none" : "block";
+
+            // Disable every control in the hidden section so the browser
+            // does not validate hidden required fields or submit their values.
+            pidFields.querySelectorAll("input, select, textarea").forEach(function (field) {
+                field.disabled = !isPid;
+            });
+
+            mdlFields.querySelectorAll("input, select, textarea").forEach(function (field) {
+                field.disabled = isPid;
+            });
+
+            // Apply required validation only to the active credential form.
+            const pidNumber = pidFields.querySelector('[name="personal_id_number"]');
+            if (pidNumber) {
+                pidNumber.required = isPid;
+            }
+
+            [
+                "document_number",
+                "issue_date",
+                "expiry_date",
+                "issuing_authority",
+                "issuing_country",
+                "portrait"
+            ].forEach(function (name) {
+                mdlFields.querySelectorAll('[name="' + name + '"]').forEach(function (field) {
+                    field.required = !isPid;
+                });
+            });
+        });
+
     </script>
 </head>
 
@@ -70,12 +128,12 @@
     <!-- Selection screen -->
     <div id="selection">
 
-        <h1>Digital Driving Licence Issuer</h1>
+        <h1 id="pageHeading">Digital Driving Licence Issuer</h1>
 
-        <h2>Issue a Digital Driving Licence</h2>
+        <h2 id="issueHeading">Issue a Digital Driving Licence</h2>
         <p>How should the applicant information be provided?</p>
 
-        <div class="option" onclick="showUserForm()">
+        <div id="userOption" class="option" onclick="showUserForm()">
             <h3>Enter Applicant Details</h3>
             <p>Enter the applicant's information and upload a portrait.</p>
             <button type="button">Continue</button>
@@ -111,10 +169,10 @@
     <!-- User input screen -->
     <div id="userForm">
 
-        <h2>Applicant Information</h2>
-        <p>Enter the information required to issue the digital driving licence.</p>
-        
-        
+        <h2 id="userFormHeading">Applicant Information</h2>
+        <p id="userFormDescription">Enter the information required to issue the digital driving licence.</p>
+
+
         <form action="authorize" method="post" enctype="multipart/form-data">
 
             <input
@@ -157,7 +215,152 @@
                     required
                 />
             </div>
-            <h3>Licence Information</h3>
+            <div id="pidFields" style="display: none;">
+                <h3>Personal ID Information</h3>
+
+                <div class="field">
+                    <label for="personal_id_number">Personal administrative number:</label>
+                    <input type="text" id="personal_id_number" name="personal_id_number" />
+                </div>
+
+                <div class="field">
+                    <label for="family_name_birth">Family name at birth:</label>
+                    <input type="text" id="family_name_birth" name="family_name_birth" />
+                </div>
+
+                <div class="field">
+                    <label for="given_name_birth">First name at birth:</label>
+                    <input type="text" id="given_name_birth" name="given_name_birth" />
+                </div>
+
+                <div class="field">
+                    <label for="birth_place">Place of birth:</label>
+                    <input type="text" id="birth_place" name="birth_place" />
+                </div>
+
+                <div class="field">
+                    <label for="birth_country">Country of birth:</label>
+                    <input type="text" id="birth_country" name="birth_country" />
+                </div>
+
+                <div class="field">
+                    <label for="birth_state">State/region of birth:</label>
+                    <input type="text" id="birth_state" name="birth_state" />
+                </div>
+
+                <div class="field">
+                    <label for="birth_city">City of birth:</label>
+                    <input type="text" id="birth_city" name="birth_city" />
+                </div>
+
+                <h3>Address</h3>
+
+                <div class="field">
+                    <label for="address">Formatted address:</label>
+                    <input type="text" id="address" name="address" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_country">Country of residence:</label>
+                    <input type="text" id="resident_country" name="resident_country" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_state">State/region:</label>
+                    <input type="text" id="resident_state" name="resident_state" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_city">City:</label>
+                    <input type="text" id="resident_city" name="resident_city" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_postal_code">Postal code:</label>
+                    <input type="text" id="resident_postal_code" name="resident_postal_code" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_street">Street:</label>
+                    <input type="text" id="resident_street" name="resident_street" />
+                </div>
+
+                <div class="field">
+                    <label for="resident_house_number">House number:</label>
+                    <input type="text" id="resident_house_number" name="resident_house_number" />
+                </div>
+
+                <h3>Additional Personal Information</h3>
+
+                <div class="field">
+                    <label for="sex">Sex:</label>
+                    <select id="sex" name="sex">
+                        <option value="">Not specified</option>
+                        <option value="0">Unknown</option>
+                        <option value="1">Male</option>
+                        <option value="2">Female</option>
+                        <option value="9">Not applicable</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="nationality">Nationality (country code):</label>
+                    <input type="text" id="nationality" name="nationality" maxlength="2" />
+                </div>
+
+                <div class="field">
+                    <label for="issuance_date">Date of issue:</label>
+                    <input type="date" id="issuance_date" name="issuance_date" />
+                </div>
+
+                <div class="field">
+                    <label for="expiry_date">Date of expiry:</label>
+                    <input type="date" id="expiry_date" name="expiry_date" />
+                </div>
+
+                <div class="field">
+                    <label for="issuing_authority">Issuing authority:</label>
+                    <input type="text" id="issuing_authority" name="issuing_authority" />
+                </div>
+
+                <div class="field">
+                    <label for="document_number">Document number:</label>
+                    <input type="text" id="document_number" name="document_number" />
+                </div>
+
+                <div class="field">
+                    <label for="issuing_jurisdiction">Issuing jurisdiction:</label>
+                    <input type="text" id="issuing_jurisdiction" name="issuing_jurisdiction" />
+                </div>
+
+                <div class="field">
+                    <label for="issuing_country">Issuing country:</label>
+                    <input type="text" id="issuing_country" name="issuing_country" maxlength="2" />
+                </div>
+
+                <div class="field">
+                    <label for="email_address">Email address of holder:</label>
+                    <input type="email" id="email_address" name="email_address" />
+                </div>
+
+                <div class="field">
+                    <label for="mobile_phone_number">Mobile phone of holder:</label>
+                    <input type="tel" id="mobile_phone_number" name="mobile_phone_number" />
+                </div>
+
+                <div class="field">
+                    <label for="pidPortrait">Photo of holder:</label>
+                    <input
+                        type="file"
+                        id="pidPortrait"
+                        name="portrait"
+                        accept="image/*"
+                    />
+                </div>
+            </div>
+
+            <div id="mdlFields">
+                <h3>Licence Information</h3>
             <div class="field">
                 <label for="document_number">Licence number:</label>
                 <input
@@ -214,10 +417,10 @@
             </div>
 
             <div class="field">
-                <label for="portrait">Applicant Portrait:</label>
+                <label for="mdlPortrait">Applicant Portrait:</label>
                 <input
                     type="file"
-                    id="portrait"
+                    id="mdlPortrait"
                     name="portrait"
                     accept="image/*"
                     required
@@ -277,7 +480,8 @@
 
             <br/>
 
-            <button type="submit">
+            </div>
+            <button id="submitButton" type="submit">
                 Issue Digital Driving Licence
             </button>
 

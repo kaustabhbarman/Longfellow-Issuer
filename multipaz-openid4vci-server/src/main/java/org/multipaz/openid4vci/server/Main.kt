@@ -6,6 +6,7 @@ import org.multipaz.openid4vci.credential.CredentialFactoryMdl
 import org.multipaz.openid4vci.credential.CredentialFactoryMdocPid
 import org.multipaz.openid4vci.credential.CredentialFactoryRegistry
 import org.multipaz.openid4vci.credential.CredentialFactorySdjwtPid
+import org.multipaz.openid4vci.credential.CredentialFactorySdjwtMdl
 import org.multipaz.openid4vci.credential.CredentialFactoryUtopiaLoyalty
 import org.multipaz.openid4vci.credential.CredentialFactoryUtopiaMovieTicket
 import org.multipaz.openid4vci.credential.CredentialFactoryUtopiaNaturalization
@@ -39,6 +40,7 @@ class Main {
                     val credentialFactoryRegistry = CredentialFactoryRegistry(
                         listOf(
                             CredentialFactoryMdl(),
+                            CredentialFactorySdjwtMdl(),
                             CredentialFactoryMdocPid(),
                             CredentialFactorySdjwtPid(),
                             CredentialFactoryUtopiaNaturalization(),

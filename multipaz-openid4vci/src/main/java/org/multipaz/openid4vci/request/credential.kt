@@ -47,6 +47,7 @@ import org.multipaz.openid4vci.credential.CredentialFactoryRegistry
 import org.multipaz.openid4vci.customization.NonceManager
 import org.multipaz.openid4vci.util.IssuanceState
 import org.multipaz.openid4vci.util.MdlApplicantRepository
+import org.multipaz.openid4vci.util.PidApplicantRepository
 import org.multipaz.openid4vci.util.OpaqueIdType
 import org.multipaz.openid4vci.util.authorizeWithDpop
 import org.multipaz.openid4vci.util.codeToId
@@ -341,6 +342,137 @@ private suspend fun readSystemOfRecord(
 ): DataItem {
     val systemOfRecordUrl = BackendEnvironment.getSystemOfRecordUrl()
     if (systemOfRecordUrl == null) {
+        // Local development data for Personal ID credentials.
+        // PID factories read identity attributes from the "core" map.
+        if (state.scope == "core") {
+            val pidApplicant = state.applicantId?.let {
+                PidApplicantRepository.get(it)
+            }
+
+            return buildCborMap {
+                putCborMap("core") {
+                    // Required/basic PID claims
+                    put("given_name", pidApplicant?.givenName ?: "Alex")
+                    put("family_name", pidApplicant?.familyName ?: "Mustermann")
+
+                    put(
+                        "birth_date",
+                        LocalDate.parse(pidApplicant?.birthDate ?: "1995-05-10")
+                            .toDataItemFullDate()
+                    )
+
+                    put(
+                        "utopia_id_number",
+                        pidApplicant?.personalIdNumber ?: "PID-DEMO-123456"
+                    )
+
+                    // Holder photo
+                    pidApplicant?.portrait?.let { portrait ->
+                        put("portrait", portrait.toByteArray())
+                    }
+
+                    // Name at birth
+                    pidApplicant?.familyNameBirth?.let {
+                        put("family_name_birth", it)
+                    }
+                    pidApplicant?.givenNameBirth?.let {
+                        put("given_name_birth", it)
+                    }
+
+                    // Place of birth
+                    pidApplicant?.birthPlace?.let {
+                        put("birth_place", it)
+                    }
+                    pidApplicant?.birthCountry?.let {
+                        put("birth_country", it)
+                    }
+                    pidApplicant?.birthState?.let {
+                        put("birth_state", it)
+                    }
+                    pidApplicant?.birthCity?.let {
+                        put("birth_city", it)
+                    }
+
+                    // Address
+                    pidApplicant?.address?.let {
+                        put("resident_address", it)
+                    }
+                    pidApplicant?.residentCountry?.let {
+                        put("resident_country", it)
+                    }
+                    pidApplicant?.residentState?.let {
+                        put("resident_state", it)
+                    }
+                    pidApplicant?.residentCity?.let {
+                        put("resident_city", it)
+                    }
+                    pidApplicant?.residentPostalCode?.let {
+                        put("resident_postal_code", it)
+                    }
+                    pidApplicant?.residentStreet?.let {
+                        put("resident_street", it)
+                    }
+                    pidApplicant?.residentHouseNumber?.let {
+                        put("resident_house_number", it)
+                    }
+
+                    // Sex: ISO/IEC 5218 numeric code
+                    pidApplicant?.sex?.let {
+                        put("sex", it)
+                    }
+
+                    // Nationality: mDoc expects a CBOR array of country codes
+                    pidApplicant?.nationality?.let { nationality ->
+                        put(
+                            "nationality",
+                            buildCborArray {
+                                add(nationality)
+                            }
+                        )
+                    }
+
+                    // Issue and expiry dates
+                    pidApplicant?.issuanceDate?.let {
+                        put("issuance_date", LocalDate.parse(it).toDataItemFullDate())
+                    }
+                    pidApplicant?.expiryDate?.let {
+                        put("expiry_date", LocalDate.parse(it).toDataItemFullDate())
+                    }
+
+                    // Issuing document details
+                    pidApplicant?.issuingAuthority?.let {
+                        put("issuing_authority", it)
+                    }
+                    pidApplicant?.documentNumber?.let {
+                        put("document_number", it)
+                    }
+                    pidApplicant?.issuingJurisdiction?.let {
+                        put("issuing_jurisdiction", it)
+                    }
+                    pidApplicant?.issuingCountry?.let {
+                        put("issuing_country", it)
+                    }
+
+                    // Contact details
+                    pidApplicant?.emailAddress?.let {
+                        put("email_address", it)
+                    }
+                    pidApplicant?.mobilePhoneNumber?.let {
+                        put("mobile_phone_number", it)
+                    }
+                }
+
+                // Keep the existing records map exactly as it is
+                putCborMap("records") {
+                    putCborMap("mDL") { putCborMap("") {} }
+                    putCborMap("naturalization") { putCborMap("") {} }
+                    putCborMap("movie") { putCborMap("") {} }
+                    putCborMap("wholesale") { putCborMap("") {} }
+                    putCborMap("payment") { putCborMap("") {} }
+                }
+            }
+        }
+
 
         val applicantId = state.applicantId
             ?: throw IllegalStateException("No applicant associated with issuance state")
