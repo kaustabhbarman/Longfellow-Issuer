@@ -40,6 +40,8 @@ import org.multipaz.crypto.EcPrivateKey
 import org.multipaz.crypto.X509Cert
 import org.multipaz.openid4vci.credential.CredentialFactoryDigitalPaymentCredential
 import org.multipaz.openid4vci.credential.CredentialFactoryMdl
+import org.multipaz.openid4vci.credential.CredentialFactorySdjwtMdl
+import org.multipaz.openid4vci.credential.CredentialFactorySdjwtPid
 import org.multipaz.openid4vci.credential.CredentialFactoryRegistry
 import org.multipaz.openid4vci.credential.CredentialFactoryUtopiaNaturalization
 import org.multipaz.provisioning.AuthorizationChallenge
@@ -94,6 +96,8 @@ class ProvisioningClientTest {
         credentalFactoryRegistry = CredentialFactoryRegistry(
             listOf(
                 CredentialFactoryMdl(),
+                CredentialFactorySdjwtMdl(),
+                CredentialFactorySdjwtPid(),
                 CredentialFactoryUtopiaNaturalization(),
                 CredentialFactoryDigitalPaymentCredential()
             )

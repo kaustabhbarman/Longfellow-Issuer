@@ -1,5 +1,7 @@
 package org.multipaz.openid4vci.credential
 
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -103,6 +105,125 @@ class CredentialFactorySdjwtPid : CredentialFactory {
                 added.add("personal_administrative_number")
             }
 
+            // Names at birth: SD-JWT uses different claim names
+            // Names at birth: SD-JWT uses different claim names
+            if (coreData.hasKey("family_name_birth")) {
+                put("birth_family_name", coreData["family_name_birth"].asTstr)
+                added.add("birth_family_name")
+            }
+
+            if (coreData.hasKey("given_name_birth")) {
+                put("birth_given_name", coreData["given_name_birth"].asTstr)
+                added.add("birth_given_name")
+            }
+
+            // Place of birth: SD-JWT represents this as a nested object
+            val hasBirthPlace =
+                coreData.hasKey("birth_country") ||
+                coreData.hasKey("birth_state") ||
+                coreData.hasKey("birth_city")
+
+            if (hasBirthPlace) {
+                putJsonObject("place_of_birth") {
+                    if (coreData.hasKey("birth_country")) {
+                        put("country", coreData["birth_country"].asTstr)
+                    }
+                    if (coreData.hasKey("birth_state")) {
+                        put("region", coreData["birth_state"].asTstr)
+                    }
+                    if (coreData.hasKey("birth_city")) {
+                        put("locality", coreData["birth_city"].asTstr)
+                    }
+                }
+                added.add("place_of_birth")
+            }
+
+            // Address: SD-JWT uses a nested address object
+            val hasAddress =
+                coreData.hasKey("resident_address") ||
+                coreData.hasKey("resident_country") ||
+                coreData.hasKey("resident_state") ||
+                coreData.hasKey("resident_city") ||
+                coreData.hasKey("resident_postal_code") ||
+                coreData.hasKey("resident_street") ||
+                coreData.hasKey("resident_house_number")
+
+            if (hasAddress) {
+                putJsonObject("address") {
+                    if (coreData.hasKey("resident_address")) {
+                        put("formatted", coreData["resident_address"].asTstr)
+                    }
+                    if (coreData.hasKey("resident_country")) {
+                        put("country", coreData["resident_country"].asTstr)
+                    }
+                    if (coreData.hasKey("resident_state")) {
+                        put("region", coreData["resident_state"].asTstr)
+                    }
+                    if (coreData.hasKey("resident_city")) {
+                        put("locality", coreData["resident_city"].asTstr)
+                    }
+                    if (coreData.hasKey("resident_postal_code")) {
+                        put("postal_code", coreData["resident_postal_code"].asTstr)
+                    }
+
+                    val street = if (coreData.hasKey("resident_street")) {
+                        coreData["resident_street"].asTstr
+                    } else {
+                        null
+                    }
+
+                    val houseNumber = if (coreData.hasKey("resident_house_number")) {
+                        coreData["resident_house_number"].asTstr
+                    } else {
+                        null
+                    }
+
+                    when {
+                        street != null && houseNumber != null ->
+                            put("street_address", "$street $houseNumber")
+                        street != null ->
+                            put("street_address", street)
+                        houseNumber != null ->
+                            put("street_address", houseNumber)
+                    }
+                }
+                added.add("address")
+            }
+
+            // SD-JWT uses nationalities as a JSON array
+            if (coreData.hasKey("nationality")) {
+                put(
+                    "nationalities",
+                    buildJsonArray {
+                        for (nationality in coreData["nationality"].asArray) {
+                            add(JsonPrimitive(nationality.asTstr))
+                        }
+                    }
+                )
+                added.add("nationalities")
+            }
+
+            // Date claim names differ in SD-JWT
+            if (coreData.hasKey("issuance_date")) {
+                put("date_of_issuance", coreData["issuance_date"].asDateString.toString())
+                added.add("date_of_issuance")
+            }
+
+            if (coreData.hasKey("expiry_date")) {
+                put("date_of_expiry", coreData["expiry_date"].asDateString.toString())
+                added.add("date_of_expiry")
+            }
+
+            // Contact claim names differ in SD-JWT
+            if (coreData.hasKey("email_address")) {
+                put("email", coreData["email_address"].asTstr)
+                added.add("email")
+            }
+
+            if (coreData.hasKey("mobile_phone_number")) {
+                put("phone_number", coreData["mobile_phone_number"].asTstr)
+                added.add("phone_number")
+            }
             // Transfer core fields that have counterparts in the PID credential
             for ((nameItem, value) in coreData.asMap) {
                 val name = nameItem.asTstr
