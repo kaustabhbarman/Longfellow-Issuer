@@ -5,8 +5,10 @@ const urlSchema = params.get("url_schema") || "openid-credential-offer";
 // Only show the two credential types selected for the Issuer UI.
 // Keep the other credential factories and backend functionality intact.
 const VISIBLE_CREDENTIALS = [
-    { id: "mDL", title: "Driving Licence", description: "Issue a digital driving licence." },
-    { id: "pid_mdoc", title: "Personal ID", description: "Issue a digital personal identity credential." }
+    { id: "mDL", title: "Driving Licence", description: "Issue a digital driving licence in mDoc format." },
+    { id: "mDL_sd_jwt", title: "Driving Licence · SD-JWT", description: "Issue a digital driving licence in SD-JWT format." },
+    { id: "pid_mdoc", title: "Personal ID", description: "Issue a digital personal identity credential in mDoc format." },
+    { id: "pid_sd_jwt", title: "Personal ID · SD-JWT", description: "Issue a digital personal identity credential in SD-JWT format." }
 ];
 
 if (configId) {
@@ -99,7 +101,7 @@ async function displayCredentialList() {
 
             const imageFrame = element("div", "credential-card-art");
             const img = element("img", "credential-list-art");
-            img.src = (item.id === "mDL" ? "card-mdl.png" : "card-pid.png");
+            img.src = (item.id === "mDL" || item.id === "mDL_sd_jwt" ? "card-mdl.png" : "card-pid.png");
             img.alt = item.title + " card artwork";
             img.loading = "lazy";
             imageFrame.appendChild(img);
@@ -149,7 +151,7 @@ async function displayCredentialConfig(id) {
         const overview = element("div", "detail-overview");
         const art = element("div", "detail-art");
         const img = element("img", "credential-detail-art");
-        img.src = (id === "mDL" ? "card-mdl.png" : "card-pid.png");
+        img.src = (id === "mDL" || id === "mDL_sd_jwt" ? "card-mdl.png" : "card-pid.png");
         img.alt = selected.title + " card artwork";
         art.appendChild(img);
         overview.appendChild(art);
@@ -158,16 +160,22 @@ async function displayCredentialConfig(id) {
         addText(meta, "h3", "section-title", "Credential information");
 
         let formatText = config.format || "Not specified";
+
         if (config.format === "mso_mdoc") {
-            formatText = "Mobile document (mDoc)";
-            if (config.doctype) formatText += " · " + config.doctype;
+            formatText = "Mobile Document (mDoc)";
         } else if (config.format === "dc+sd-jwt") {
             formatText = "SD-JWT";
-            if (config.vct) formatText += " · " + config.vct;
         }
 
+        const credentialName = {
+            "mDL": "Driving Licence",
+            "mDL_sd_jwt": "Driving Licence",
+            "pid_mdoc": "Personal ID",
+            "pid_sd_jwt": "Personal ID"
+        }[id] || selected.title;
+
         addText(meta, "p", "meta-row", "Format: " + formatText);
-        addText(meta, "p", "meta-row", "Configuration ID: " + id);
+        addText(meta, "p", "meta-row", "Credential: " + credentialName);
         overview.appendChild(meta);
         page.appendChild(overview);
 

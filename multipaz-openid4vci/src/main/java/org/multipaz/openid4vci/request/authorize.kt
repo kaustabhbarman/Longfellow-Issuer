@@ -41,6 +41,8 @@ import org.multipaz.openid4vci.util.DrivingPrivilege
 import org.multipaz.openid4vci.util.IssuanceState
 import org.multipaz.openid4vci.util.MdlApplicant
 import org.multipaz.openid4vci.util.MdlApplicantRepository
+import org.multipaz.openid4vci.util.PidApplicant
+import org.multipaz.openid4vci.util.PidApplicantRepository
 import org.multipaz.openid4vci.util.MULTIPAZ_PRE_AUTHORIZE_URI
 import org.multipaz.openid4vci.util.OAUTH_REQUEST_URI_PREFIX
 import org.multipaz.openid4vci.util.OPENID4VP_REQUEST_URI_PREFIX
@@ -197,11 +199,15 @@ private suspend fun getHtml(id: String, expiresIn: Duration, call: ApplicationCa
     val resources = BackendEnvironment.getInterface(Resources::class)!!
     val authorizationCode = idToCode(OpaqueIdType.AUTHORIZATION_STATE, id, expiresIn)
     val pidReadingCode = idToCode(OpaqueIdType.PID_READING, id, expiresIn)
+    val state = IssuanceState.getIssuanceState(id)
+    val credentialScope = state.scope
     val authorizeHtml = resources.getStringResource("authorize.html")!!
+
     call.respondText(
         text = authorizeHtml
             .replace("\$authorizationCode", authorizationCode)
-            .replace("\$pidReadingCode", pidReadingCode),
+            .replace("\$pidReadingCode", pidReadingCode)
+            .replace("\$credentialScope", credentialScope),
         contentType = ContentType.Text.Html
     )
 }
@@ -338,25 +344,35 @@ suspend fun authorizePost(call: ApplicationCall) {
                 }
             }
         } else {
-                // No external system of record.
-   	        // Create an applicant record locally for development/testing.
-    		val mode = parameters["mode"]
-                ?: throw InvalidRequestException("'mode' missing")
+            // No external system of record.
+            if (state.scope == "core") {
+                // PID uses its own applicant model and repository.
+                val mode = parameters["mode"]
+                    ?: throw InvalidRequestException("'mode' missing")
 
-            val applicant = when (mode) {
+                val applicant = when (mode) {
+                    "fake" -> createFakePidApplicant()
+                    "user" -> createUserPidApplicant(parameters, portraitBytes)
+                    else -> throw InvalidRequestException("Invalid authorization mode")
+                }
 
-                "fake" -> createFakeMdlApplicant(parameters)
+                val applicantId = PidApplicantRepository.create(applicant)
+                state.applicantId = applicantId
+                Logger.i(TAG, "Authorizing local PID issuance")
+            } else {
+                // Preserve the original local applicant flow for mDL and other scopes.
+                val mode = parameters["mode"]
+                    ?: throw InvalidRequestException("'mode' missing")
 
-                "user" -> createUserMdlApplicant(
-                    parameters,
-                    portraitBytes
-                )
+                val applicant = when (mode) {
+                    "fake" -> createFakeMdlApplicant(parameters)
+                    "user" -> createUserMdlApplicant(parameters, portraitBytes)
+                    else -> throw InvalidRequestException("Invalid authorization mode")
+                }
 
-                else -> throw InvalidRequestException("Invalid authorization mode")
+                val applicantId = MdlApplicantRepository.create(applicant)
+                state.applicantId = applicantId
             }
-
-            val applicantId = MdlApplicantRepository.create(applicant)
-            state.applicantId = applicantId
         }
 
         state.authorized = Clock.System.now()
@@ -399,6 +415,115 @@ suspend fun authorizePost(call: ApplicationCall) {
         })
     }
 }
+private suspend fun createFakePidApplicant(): PidApplicant {
+    val resources = BackendEnvironment.getInterface(Resources::class)!!
+
+    return PidApplicant(
+        givenName = "Alex",
+        familyName = "Mustermann",
+        birthDate = "1995-05-10",
+        personalIdNumber = "PID-DEMO-123456",
+        portrait = ByteString(
+            resources.getRawResource("female.jpg")!!.toByteArray()
+        ),
+
+        familyNameBirth = "Mustermann",
+        givenNameBirth = "Alex",
+
+        birthPlace = "Berlin",
+        birthCountry = "DE",
+        birthState = "Berlin",
+        birthCity = "Berlin",
+
+        address = "Musterstraße 10, 10115 Berlin",
+        residentCountry = "DE",
+        residentState = "Berlin",
+        residentCity = "Berlin",
+        residentPostalCode = "10115",
+        residentStreet = "Musterstraße",
+        residentHouseNumber = "10",
+
+        sex = 1,
+        nationality = "DE",
+        issuanceDate = "2020-01-15",
+        expiryDate = "2030-01-14",
+        issuingAuthority = "Bürgeramt Berlin",
+        documentNumber = "L01X00T47",
+        issuingJurisdiction = "DE-BE",
+        issuingCountry = "DE",
+
+        emailAddress = "alex.mustermann@example.com",
+        mobilePhoneNumber = "+4915112345678"
+    )
+}
+
+private fun createUserPidApplicant(
+    parameters: Parameters,
+    portraitBytes: ByteArray?
+): PidApplicant {
+    fun optional(name: String): String? =
+        parameters[name]?.trim()?.takeIf { it.isNotEmpty() }
+
+    val givenName = parameters["given_name"]
+        ?: throw InvalidRequestException("'given_name' missing")
+    val familyName = parameters["family_name"]
+        ?: throw InvalidRequestException("'family_name' missing")
+    val birthDate = parameters["birth_date"]
+        ?: throw InvalidRequestException("'birth_date' missing")
+    val personalIdNumber = parameters["personal_id_number"]
+        ?: throw InvalidRequestException("'personal_id_number' missing")
+
+    val sex = optional("sex")?.let {
+        it.toIntOrNull()
+            ?: throw InvalidRequestException("'sex' must be a number")
+    }
+
+    if (sex != null && sex !in setOf(0, 1, 2, 9)) {
+        throw InvalidRequestException("'sex' must be 0, 1, 2, or 9")
+    }
+
+    val portrait = portraitBytes
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { ByteString(it) }
+
+    return PidApplicant(
+        givenName = givenName,
+        familyName = familyName,
+        birthDate = birthDate,
+        personalIdNumber = personalIdNumber,
+        portrait = portrait,
+
+        familyNameBirth = optional("family_name_birth"),
+        givenNameBirth = optional("given_name_birth"),
+
+        birthPlace = optional("birth_place"),
+        birthCountry = optional("birth_country"),
+        birthState = optional("birth_state"),
+        birthCity = optional("birth_city"),
+
+        address = optional("address"),
+        residentCountry = optional("resident_country"),
+        residentState = optional("resident_state"),
+        residentCity = optional("resident_city"),
+        residentPostalCode = optional("resident_postal_code"),
+        residentStreet = optional("resident_street"),
+        residentHouseNumber = optional("resident_house_number"),
+
+        sex = sex,
+        nationality = optional("nationality"),
+        issuanceDate = optional("issuance_date"),
+        expiryDate = optional("expiry_date"),
+        issuingAuthority = optional("issuing_authority"),
+        documentNumber = optional("document_number"),
+        issuingJurisdiction = optional("issuing_jurisdiction"),
+        issuingCountry = optional("issuing_country"),
+
+        emailAddress = optional("email_address"),
+        mobilePhoneNumber = optional("mobile_phone_number")
+    )
+}
+
+
 private suspend fun createFakeMdlApplicant(
     parameters: Parameters
 ): MdlApplicant {

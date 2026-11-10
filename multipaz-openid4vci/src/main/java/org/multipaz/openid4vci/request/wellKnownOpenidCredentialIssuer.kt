@@ -26,7 +26,7 @@ suspend fun wellKnownOpenidCredentialIssuer(call: ApplicationCall) {
     val configuration = BackendEnvironment.getInterface(Configuration::class)!!
     val baseUrl = configuration.baseUrl
     val useScopes = configuration.getValue("use_scopes") != "false"
-    val name = configuration.getValue("issuer_name") ?: "Multipaz Sample Issuer"
+    val name = configuration.getValue("issuer_name") ?: "Longfellow Issuer"
     val locale = configuration.getValue("issuer_locale") ?: "en-US"
     val registry = BackendEnvironment.getInterface(CredentialFactoryRegistry::class)!!
     val signingKeys = registry.byId.mapValues { (_, factory) -> factory.getSigningKey() }
