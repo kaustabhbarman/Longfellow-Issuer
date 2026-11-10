@@ -1,234 +1,248 @@
-const params = new URLSearchParams(window.location.search)
+const params = new URLSearchParams(window.location.search);
 const configId = params.get("config_id");
+const urlSchema = params.get("url_schema") || "openid-credential-offer";
+
+// Only show the two credential types selected for the Issuer UI.
+// Keep the other credential factories and backend functionality intact.
+const VISIBLE_CREDENTIALS = [
+    { id: "mDL", title: "Driving Licence", description: "Issue a digital driving licence." },
+    { id: "pid_mdoc", title: "Personal ID", description: "Issue a digital personal identity credential." }
+];
+
 if (configId) {
     displayCredentialConfig(configId);
 } else {
     displayCredentialList();
 }
 
-// TODO: change default to haip-vci once new clients are pushed
-const urlSchema = params.get("url_schema") || "openid-credential-offer"
-
-async function displayCredentialConfig(configId) {
-    let container = document.getElementById("main");
-    let issuance = await fetchMetadata();
-    addHeader(issuance);
-    let config = issuance.credential_configurations_supported[configId];
-    let item = document.createElement("div");
-    item.className = "credential_container"
-    container.appendChild(item);
-    let h2 = document.createElement("h2");
-    item.appendChild(h2);
-    let display = config.credential_metadata.display[0];
-    h2.textContent = display.name;
-    let img = document.createElement("img");
-    img.className = "credential_logo";
-    img.setAttribute("src", display.logo?.uri);
-    item.appendChild(img);
-    let credType = document.createElement("p");
-    credType.className = "credential_type";
-    let credTypeText = "Format: "
-    if (config.format == "mso_mdoc") {
-        credTypeText += " mDoc [" + config.doctype + "]"
-    } else if (config.format == "dc+sd-jwt") {
-        credTypeText += " SD-JWT [" + config.vct + "]"
-    } else {
-        credTypeText += config.format
-    }
-    credType.textContent = credTypeText;
-    item.appendChild(credType);
-    let proofsHeading = document.createElement("h4");
-    proofsHeading.textContent = "OpenID4VCI Proof Types Accepted";
-    item.appendChild(proofsHeading);
-    let proofsList = document.createElement("ul");
-    item.appendChild(proofsList);
-    let proofs = config.proof_types_supported;
-    if (proofs == null || proofs.length == 0) {
-        let li = document.createElement("li");
-        li.textContent = "Not key bound, no proof needed";
-        proofsList.appendChild(li);
-    } else {
-        for (proof in proofs) {
-            let li = document.createElement("li");
-            let text = proof
-            let algs = proofs[proof].proof_signing_alg_values_supported
-            if (algs) {
-                text = text + " [" + algs.join(", ") + "]";
-            }
-            li.textContent = text;
-            proofsList.appendChild(li);
-        }
-    }
-
-    let title = document.createElement("h3");
-    title.textContent = "Authorization Code Flow";
-    item.appendChild(title);
-    let p1 = document.createElement("p");
-    item.appendChild(p1);
-    let a = document.createElement("a");
-    p1.appendChild(a);
-    a.textContent = "Credential offer using custom url schema"
-    let url = location.href.substring(0, location.href.lastIndexOf("/"));
-    let offer = {
-        credential_issuer: url,
-        credential_configuration_ids: [configId],
-        grants: {
-            authorization_code:{}
-        }
-    };
-    let href = urlSchema + "://?credential_offer=" + encodeURIComponent(JSON.stringify(offer));
-    a.href = href;
-    let p2 = document.createElement("p");
-    item.appendChild(p2);
-    p2.textContent = "or scan the QR code below"
-    let qr = document.createElement("img");
-    qr.className = "qr"
-    qr.setAttribute("src", "qr?q=" + encodeURIComponent(href));
-    qr.setAttribute("style", "image-rendering: pixelated");
-    p2.appendChild(qr);
-
-    let preAuthTitle = document.createElement("h3");
-    preAuthTitle.textContent = "Pre-authorized Offer Flow";
-    item.appendChild(preAuthTitle);
-    let preAuthDiv = document.createElement("div");
-    item.appendChild(preAuthDiv);
-    let preAuthForm = document.createElement("form");
-    preAuthDiv.appendChild(preAuthForm);
-    preAuthForm.method = "GET";
-    preAuthForm.action = "authorize";
-    let preAuthConfigurationId = document.createElement("input")
-    preAuthConfigurationId.type = "hidden";
-    preAuthConfigurationId.name = "configuration_id";
-    preAuthConfigurationId.value = configId;
-    preAuthForm.appendChild(preAuthConfigurationId);
-    let preAuthUrlSchema = document.createElement("input")
-    preAuthUrlSchema.type = "hidden";
-    preAuthUrlSchema.name = "url_schema";
-    preAuthUrlSchema.value = urlSchema;
-    preAuthForm.appendChild(preAuthUrlSchema);
-    let preAuthRequestUri = document.createElement("input")
-    preAuthRequestUri.type = "hidden";
-    preAuthRequestUri.name = "request_uri";
-    preAuthRequestUri.value = "https://pre-authorize.multipaz.org/";
-    preAuthForm.appendChild(preAuthRequestUri);
-    preAuthForm.appendChild(document.createTextNode("Transaction Code: "))
-    let txLength = document.createElement("select");
-    txLength.name = "tx_kind";
-    let txNone = document.createElement("option");
-    txNone.value = "none"
-    txNone.textContent = "None"
-    txLength.appendChild(txNone);
-    let tx4digits = document.createElement("option");
-    tx4digits.value = "n4"
-    tx4digits.textContent = "4 digits"
-    txLength.appendChild(tx4digits);
-    let tx4alpha = document.createElement("option");
-    tx4alpha.value = "a4"
-    tx4alpha.textContent = "4 letters or digits"
-    txLength.appendChild(tx4alpha);
-    let tx6digits = document.createElement("option");
-    tx6digits.value = "n6"
-    tx6digits.textContent = "6 digits"
-    txLength.appendChild(tx6digits);
-    let tx6alpha = document.createElement("option");
-    tx6alpha.value = "a6"
-    tx6alpha.textContent = "6 letters or digits"
-    txLength.appendChild(tx6alpha);
-    preAuthForm.appendChild(txLength);
-    preAuthForm.appendChild(document.createElement("br"));
-    let txBlock = document.createElement("div");
-    txBlock.style.display = "none";
-    txBlock.textContent = "Description: "
-    let txText = document.createElement("input");
-    txText.type = "text";
-    txText.value = "Transaction Code"
-    txText.name = "tx_prompt";
-    txBlock.appendChild(txText);
-    preAuthForm.appendChild(txBlock);
-    txLength.onchange = function() {
-        txBlock.style.display = txLength.value == "none" ? "none" : "block";
-    };
-    let preAuthButton = document.createElement("input");
-    preAuthButton.type = "submit";
-    preAuthButton.value = "Authorize";
-    preAuthForm.appendChild(preAuthButton);
-
-    let certTitle = document.createElement("h3");
-    certTitle.textContent = "Credential signing certificate";
-    item.appendChild(certTitle);
-    let pcert = document.createElement("p");
-    item.appendChild(pcert);
-    let acert = document.createElement("a");
-    pcert.appendChild(acert);
-    acert.textContent = "Root certificate in PEM format"
-    let certUrl = location.href.substring(0, location.href.lastIndexOf("/")) + "/signing_certificate";
-    acert.href = certUrl + "?credential_id=" + encodeURIComponent(configId);
+function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
 }
 
-async function displayCredentialList() {
-    let container = document.getElementById("main");
-    let issuance = await fetchMetadata();
-    addHeader(issuance);
-    let configs = issuance.credential_configurations_supported;
-    let h2 = document.createElement("h2");
-    h2.textContent = "Credentials available from this server";
-    container.appendChild(h2);
-    for (let configId in configs) {
-        let config = configs[configId];
-        let item = document.createElement("div");
-        item.className = "credential_list_item";
-        container.appendChild(item);
-        let baseUrl = location.href.replace(/\?.*/, "");
-        let href = baseUrl + "?config_id=" +
-            encodeURIComponent(configId) + "&url_schema=" + encodeURIComponent(urlSchema);
-        let display = config.credential_metadata.display[0];
-        let a1 = document.createElement("a");
-        a1.className = "credential_list_logo_container";
-        let img = document.createElement("img");
-        img.setAttribute("src", display.logo?.uri);
-        img.className = "credential_list_logo";
-        a1.href = href;
-        a1.appendChild(img);
-        item.appendChild(a1);
-        item.appendChild(document.createTextNode(" "));
-        a2 = document.createElement("a");
-        a2.className = "credential_list_name";
-        a2.textContent = display.name;
-        a2.href = href;
-        item.appendChild(a2);
-    }
+function addText(parent, tag, className, text) {
+    const node = element(tag, className, text);
+    parent.appendChild(node);
+    return node;
+}
+
+async function fetchMetadata() {
+    const path = location.pathname.substring(0, location.pathname.lastIndexOf("/"));
+    const response = await fetch("/.well-known/openid-credential-issuer" + path);
+    if (!response.ok) throw new Error("Issuer metadata could not be loaded.");
+    return response.json();
 }
 
 function addHeader(issuance) {
     const container = document.getElementById("main");
-    const header = document.createElement("div");
-    header.className = "header";
+    const header = element("header", "site-header");
+
+    const identity = element("div", "issuer-identity");
+    const issuerLogo = issuance.display?.[0]?.logo?.uri;
+
+    if (issuerLogo) {
+        const img = element("img", "issuer-logo");
+        img.src = issuerLogo;
+        img.alt = "Issuer logo";
+        identity.appendChild(img);
+    }
+
+    const text = element("div", "issuer-identity-text");
+    addText(text, "p", "eyebrow", "DIGITAL CREDENTIAL ISSUANCE");
+    addText(text, "h1", "issuer-name", issuance.display?.[0]?.name || "Digital Credential Issuer");
+    identity.appendChild(text);
+    header.appendChild(identity);
+
+    const back = element("a", "text-link", "All credentials");
+    back.href = location.pathname;
+    if (configId) header.appendChild(back);
+
     container.appendChild(header);
-    const hi = document.createElement("img");
-    hi.className = "issuer_logo";
-    hi.setAttribute("src", issuance.display[0].logo?.uri);
-    header.appendChild(hi);
-    const h1 = document.createElement("h1");
-    h1.className = "issuer_name";
-    h1.textContent = issuance.display[0].name;
-    header.appendChild(h1);
-    const downloadButton = document.createElement("a");
-    downloadButton.textContent = "Download Wallet App (APK)";
-    downloadButton.href = "https://dribble-lung-endless.ngrok-free.dev/wallet.apk";
-    downloadButton.className = "download-wallet-button";
-    downloadButton.style.display = "inline-block";
-    downloadButton.style.margin = "16px 0";
-    downloadButton.style.padding = "10px 16px";
-    downloadButton.style.backgroundColor = "#0d6efd";
-    downloadButton.style.color = "#ffffff";
-    downloadButton.style.textDecoration = "none";
-    downloadButton.style.borderRadius = "6px";
-    downloadButton.style.fontWeight = "600";
-    downloadButton.setAttribute("download", "wallet.apk");
-    header.appendChild(downloadButton);
 }
 
-async function fetchMetadata() {
-    let path = location.pathname.substring(0, location.pathname.lastIndexOf("/"));
-    return await (await fetch("/.well-known/openid-credential-issuer" + path)).json();
+function createCredentialLink(configId, schema) {
+    const baseUrl = location.href.replace(/\?.*/, "");
+    return baseUrl + "?config_id=" + encodeURIComponent(configId) +
+        "&url_schema=" + encodeURIComponent(schema);
+}
+
+async function displayCredentialList() {
+    const container = document.getElementById("main");
+
+    try {
+        const issuance = await fetchMetadata();
+        addHeader(issuance);
+
+        const section = element("section", "page-intro");
+        addText(section, "p", "eyebrow", "CREDENTIAL CATALOGUE");
+        addText(section, "h2", "page-title", "Choose a credential");
+        addText(section, "p", "page-description",
+            "Select the credential you want to issue and configure its offer.");
+        container.appendChild(section);
+
+        const grid = element("div", "credential-grid");
+        container.appendChild(grid);
+
+        for (const item of VISIBLE_CREDENTIALS) {
+            const config = issuance.credential_configurations_supported?.[item.id];
+            if (!config) {
+                console.warn("Credential configuration unavailable:", item.id);
+                continue;
+            }
+
+            const display = config.credential_metadata?.display?.[0] || {};
+            const card = element("a", "credential-card");
+            card.href = createCredentialLink(item.id, urlSchema);
+            card.setAttribute("aria-label", "Configure " + item.title);
+
+            const imageFrame = element("div", "credential-card-art");
+            const img = element("img", "credential-list-art");
+            img.src = (item.id === "mDL" ? "card-mdl.png" : "card-pid.png");
+            img.alt = item.title + " card artwork";
+            img.loading = "lazy";
+            imageFrame.appendChild(img);
+            card.appendChild(imageFrame);
+
+            const content = element("div", "credential-card-content");
+            addText(content, "h3", "credential-card-title", item.title);
+            addText(content, "p", "credential-card-description", item.description);
+            addText(content, "span", "card-action", "Configure issuance →");
+            card.appendChild(content);
+            grid.appendChild(card);
+        }
+
+        if (!grid.children.length) {
+            addText(container, "p", "status-message",
+                "The selected credential configurations are not available in issuer metadata.");
+        }
+    } catch (error) {
+        showError(container, error);
+    }
+}
+
+async function displayCredentialConfig(id) {
+    const container = document.getElementById("main");
+
+    try {
+        const issuance = await fetchMetadata();
+        const selected = VISIBLE_CREDENTIALS.find(item => item.id === id);
+        const config = issuance.credential_configurations_supported?.[id];
+
+        addHeader(issuance);
+
+        if (!selected || !config) {
+            showError(container, new Error("This credential is not available in the current catalogue."));
+            return;
+        }
+
+        const display = config.credential_metadata?.display?.[0] || {};
+        const page = element("section", "detail-page");
+
+        const intro = element("div", "detail-intro");
+        addText(intro, "p", "eyebrow", "CREDENTIAL CONFIGURATION");
+        addText(intro, "h2", "page-title", selected.title);
+        addText(intro, "p", "page-description", selected.description);
+        page.appendChild(intro);
+
+        const overview = element("div", "detail-overview");
+        const art = element("div", "detail-art");
+        const img = element("img", "credential-detail-art");
+        img.src = (id === "mDL" ? "card-mdl.png" : "card-pid.png");
+        img.alt = selected.title + " card artwork";
+        art.appendChild(img);
+        overview.appendChild(art);
+
+        const meta = element("div", "detail-meta");
+        addText(meta, "h3", "section-title", "Credential information");
+
+        let formatText = config.format || "Not specified";
+        if (config.format === "mso_mdoc") {
+            formatText = "Mobile document (mDoc)";
+            if (config.doctype) formatText += " · " + config.doctype;
+        } else if (config.format === "dc+sd-jwt") {
+            formatText = "SD-JWT";
+            if (config.vct) formatText += " · " + config.vct;
+        }
+
+        addText(meta, "p", "meta-row", "Format: " + formatText);
+        addText(meta, "p", "meta-row", "Configuration ID: " + id);
+        overview.appendChild(meta);
+        page.appendChild(overview);
+
+
+        const preAuth = element("section", "panel");
+        addText(preAuth, "h3", "section-title", "Create a pre-authorized offer");
+        addText(preAuth, "p", "section-description",
+            "Choose whether the recipient must enter a transaction code to receive the credential.");
+
+        const form = element("form", "issuance-form");
+        form.method = "GET";
+        form.action = "authorize";
+
+        addHidden(form, "configuration_id", id);
+        addHidden(form, "url_schema", urlSchema);
+        addHidden(form, "request_uri", "https://pre-authorize.multipaz.org/");
+
+        const kindLabel = addText(form, "label", "form-label", "Transaction-code requirement");
+        const kind = element("select", "form-control");
+        kind.name = "tx_kind";
+        kind.id = "tx_kind";
+        kindLabel.htmlFor = "tx_kind";
+
+        [
+            ["none", "No transaction code"],
+            ["n4", "4-digit code"],
+            ["a4", "4-character alphanumeric code"],
+            ["n6", "6-digit code"],
+            ["a6", "6-character alphanumeric code"]
+        ].forEach(([value, label]) => {
+            const option = element("option", "", label);
+            option.value = value;
+            kind.appendChild(option);
+        });
+        form.appendChild(kindLabel);
+        form.appendChild(kind);
+
+
+
+        const submit = element("button", "button button-primary", "Generate pre-authorized offer");
+        submit.type = "submit";
+        form.appendChild(submit);
+        preAuth.appendChild(form);
+        page.appendChild(preAuth);
+
+        const issuerUrl = location.href.substring(0, location.href.lastIndexOf("/"));
+        const certificate = element("section", "panel certificate-panel");
+        addText(certificate, "h3", "section-title", "Credential signing certificate");
+        addText(certificate, "p", "section-description",
+            "View the signing certificate associated with this credential configuration.");
+
+        const certLink = element("a", "text-link", "View root certificate (PEM)");
+        certLink.href = issuerUrl + "/signing_certificate?credential_id=" +
+            encodeURIComponent(id);
+        certificate.appendChild(certLink);
+        page.appendChild(certificate);
+
+        container.appendChild(page);
+    } catch (error) {
+        showError(container, error);
+    }
+}
+
+function addHidden(form, name, value) {
+    const input = element("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+}
+
+function showError(container, error) {
+    console.error(error);
+    const message = element("div", "error-panel");
+    addText(message, "h2", "", "Unable to load this page");
+    addText(message, "p", "", error.message || "An unexpected error occurred.");
+    container.appendChild(message);
 }
