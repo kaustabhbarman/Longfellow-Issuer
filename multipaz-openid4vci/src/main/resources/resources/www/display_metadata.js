@@ -29,11 +29,15 @@ function addText(parent, tag, className, text) {
     parent.appendChild(node);
     return node;
 }
-
 async function fetchMetadata() {
-    const path = location.pathname.substring(0, location.pathname.lastIndexOf("/"));
-    const response = await fetch("/.well-known/openid-credential-issuer" + path);
-    if (!response.ok) throw new Error("Issuer metadata could not be loaded.");
+    const response = await fetch(
+        "/issuer/.well-known/openid-credential-issuer"
+    );
+
+    if (!response.ok) {
+        throw new Error("Issuer metadata could not be loaded.");
+    }
+
     return response.json();
 }
 
