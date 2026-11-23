@@ -1,16 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
-    <title>Pre-authorized credential offer</title>
+    <title>Credential ready</title>
 </head>
 <body>
 <div id="main">
-    <h3>Pre-authorized credential offer</h3>
-    <p><a href="$offer">Credential offer using custom url schema</a></p>
-    <img class="qr" style="image-rendering: pixelated" src="qr?q=$encodedOffer"/>
-    <p>$txCode</p>
+    <div class="page-intro">
+        <p class="eyebrow">CREDENTIAL ISSUANCE</p>
+        <h1 class="page-title">Your credential is ready</h1>
+        <p class="page-description">
+            Scan the QR code below using your Longfellow Wallet
+            to receive your credential.
+        </p>
+    </div>
+
+    <section class="credential-card" style="padding: 28px; align-items: center;">
+        <h2>Scan with Longfellow Wallet</h2>
+
+        <img
+            class="qr"
+            src="qr?q=$encodedOffer"
+            alt="QR code containing your credential offer for Longfellow Wallet"
+        />
+
+        <p class="section-description">
+            Open Longfellow Wallet and scan this QR code to receive your credential.
+        </p>
+
+        <p>$txCode</p>
+    </section>
 </div>
 </body>
 </html>

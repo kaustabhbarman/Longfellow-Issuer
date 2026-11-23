@@ -5,53 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="style.css" />
-
-    <style>
-        .option {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-            cursor: pointer;
-        }
-
-        .option:hover {
-            background-color: #f5f5f5;
-        }
-
-        .option h2 {
-            margin-top: 0;
-        }
-
-        button {
-            padding: 10px 20px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-
-        #userForm {
-            display: none;
-        }
-
-        .field {
-            margin: 12px 0;
-        }
-
-        label {
-            display: inline-block;
-            min-width: 180px;
-        }
-
-        input {
-            padding: 6px;
-        }
-
-        .privileges {
-            margin-top: 15px;
-        }
-    </style>
-
-    <script>
+<script>
         function showUserForm() {
             document.getElementById("selection").style.display = "none";
             document.getElementById("userForm").style.display = "block";
@@ -85,8 +39,8 @@
             const pidFields = document.getElementById("pidFields");
             const mdlFields = document.getElementById("mdlFields");
 
-            pidFields.style.display = isPid ? "block" : "none";
-            mdlFields.style.display = isPid ? "none" : "block";
+            pidFields.style.display = isPid ? "grid" : "none";
+            mdlFields.style.display = isPid ? "none" : "grid";
 
             // Disable every control in the hidden section so the browser
             // does not validate hidden required fields or submit their values.
@@ -334,8 +288,18 @@
                 </div>
 
                 <div class="field">
-                    <label for="issuing_country">Issuing country:</label>
-                    <input type="text" id="issuing_country" name="issuing_country" maxlength="2" />
+                    <label for="issuing_country">Issuing country (country code):</label>
+                    <input
+                        type="text"
+                        id="issuing_country"
+                        name="issuing_country"
+                        value="DE"
+                        placeholder="e.g. DE"
+                        maxlength="2"
+                        pattern="[A-Za-z]{2}"
+                        title="Enter a two-letter country code, e.g. DE"
+                        required
+                    />
                 </div>
 
                 <div class="field">
@@ -362,10 +326,10 @@
             <div id="mdlFields">
                 <h3>Licence Information</h3>
             <div class="field">
-                <label for="document_number">Licence number:</label>
+                <label for="mdl_document_number">Licence number:</label>
                 <input
                     type="text"
-                    id="document_number"
+                    id="mdl_document_number"
                     name="document_number"
                     required
                 />
@@ -382,36 +346,40 @@
             </div>
 
             <div class="field">
-                <label for="expiry_date">Expiry date:</label>
+                <label for="mdl_expiry_date">Expiry date:</label>
                 <input
                     type="date"
-                    id="expiry_date"
+                    id="mdl_expiry_date"
                     name="expiry_date"
                     required
                 />
             </div>
 
             <div class="field">
-                <label for="issuing_authority">
+                <label for="mdl_issuing_authority">
                     Issuing authority:
                 </label>
                 <input
                     type="text"
-                    id="issuing_authority"
+                    id="mdl_issuing_authority"
                     name="issuing_authority"
                     required
                 />
             </div>
 
             <div class="field">
-                <label for="issuing_country">
-                    Issuing country:
+                <label for="mdl_issuing_country">
+                    Issuing country (country code):
                 </label>
                 <input
                     type="text"
-                    id="issuing_country"
+                    id="mdl_issuing_country"
                     name="issuing_country"
                     value="DE"
+                    placeholder="e.g. DE"
+                    maxlength="2"
+                    pattern="[A-Za-z]{2}"
+                    title="Enter a two-letter country code, e.g. DE"
                     required
                 />
             </div>

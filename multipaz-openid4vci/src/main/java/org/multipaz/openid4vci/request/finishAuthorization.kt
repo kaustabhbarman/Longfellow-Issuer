@@ -159,8 +159,11 @@ private suspend fun preauthorizedOffer(
     val preauthorizedHtml = resources.getStringResource("pre-authorized.html")!!
     call.respondText(
         text = preauthorizedHtml
-            .replace("\$offer", offer)
-            .replace("\$encodedOffer", offer.encodeURLParameter())
+            .replace("\$offer", escapeHtmlAttribute(offer))
+            .replace(
+                "\$encodedOffer",
+                escapeHtmlAttribute(offer.encodeURLParameter())
+            )
             .replace("\$txCode", if (txCode == null) {
                 "No verification code is required"
             } else {
@@ -185,3 +188,11 @@ private suspend fun preauthorizedError(
         contentType = ContentType.Text.Html
     )
 }
+
+private fun escapeHtmlAttribute(value: String): String =
+    value
+        .replace("&", "&amp;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
