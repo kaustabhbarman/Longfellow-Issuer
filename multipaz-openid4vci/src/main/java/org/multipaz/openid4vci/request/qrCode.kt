@@ -16,21 +16,41 @@ import javax.imageio.ImageIO
 suspend fun qrCode(call: ApplicationCall) {
     val str = call.request.queryParameters["q"]
         ?: throw IllegalStateException("q parameter required")
-    val qr = Encoder.encode(str, ErrorCorrectionLevel.L, null)
+
+    val qr = Encoder.encode(str, ErrorCorrectionLevel.M, null)
     val matrix = qr.matrix
-    val width = matrix.width
-    val height = matrix.height
+
+    // Render each QR module as an 8x8 pixel square, with a
+    // four-module white quiet zone around the complete symbol.
+    val scale = 8
+    val quietZone = 4
+    val width = (matrix.width + quietZone * 2) * scale
+    val height = (matrix.height + quietZone * 2) * scale
+
     val image = BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
     val pixels = (image.raster.dataBuffer as DataBufferByte).data
-    var index = 0
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            pixels[index++] = if (matrix[x, y].toInt() == 0) -1 else 0
+
+    // Start with a white image, including the quiet zone.
+    pixels.fill(0xFF.toByte())
+
+    for (y in 0 until matrix.height) {
+        for (x in 0 until matrix.width) {
+            // Preserve the existing ZXing matrix black/white mapping.
+            if (matrix[x, y].toInt() != 0) {
+                val startX = (x + quietZone) * scale
+                val startY = (y + quietZone) * scale
+
+                for (dy in 0 until scale) {
+                    val rowStart = (startY + dy) * width + startX
+                    for (dx in 0 until scale) {
+                        pixels[rowStart + dx] = 0
+                    }
+                }
+            }
         }
     }
-    call.respondBytes(ContentType.Image.PNG) {
-        val bytes = ByteArrayOutputStream()
-        ImageIO.write(image, "png", bytes)  // not actually blocking, writing to memory-based stream
-        bytes.toByteArray()
-    }
+
+    val bytes = ByteArrayOutputStream()
+    ImageIO.write(image, "png", bytes)
+    call.respondBytes(bytes.toByteArray(), ContentType.Image.PNG)
 }

@@ -93,7 +93,11 @@ suspend fun authorizeGet(call: ApplicationCall) {
             txKind = queryParameters["tx_kind"],
             txPrompt = queryParameters["tx_prompt"]
         )
-        val urlSchema = queryParameters["url_schema"]
+        val urlSchema = queryParameters["url_schema"]?.also {
+            if (!Regex("^[A-Za-z][A-Za-z0-9+.-]{0,63}$").matches(it)) {
+                throw InvalidRequestException("Invalid 'url_schema' parameter")
+            }
+        }
         // Create a new session
         IssuanceState.createIssuanceState(
             issuanceState = IssuanceState(

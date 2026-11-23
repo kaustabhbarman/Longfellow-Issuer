@@ -269,14 +269,14 @@ body {
 
 .qr {
     display: block;
-    width: 200px;
-    max-width: 100%;
+    width: min(340px, 82vw);
     height: auto;
-    margin: 22px 0 8px;
-    padding: 10px;
-    background: white;
+    margin: 24px auto;
+    padding: 14px;
+    background: #fff;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
     image-rendering: pixelated;
 }
 
@@ -479,4 +479,240 @@ body {
     width: 48px;
     height: 48px;
     object-fit: contain;
+}
+
+/* Applicant selection and credential issuance form */
+#selection,
+#userForm {
+    max-width: 900px;
+    margin: 36px auto;
+}
+
+#selection h1,
+#userForm h2 {
+    margin: 0 0 8px;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+}
+
+#selection > p,
+#userForm > p {
+    margin: 0 0 26px;
+    color: var(--muted);
+}
+
+#selection {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+#selection > h1,
+#selection > h2,
+#selection > p {
+    grid-column: 1 / -1;
+}
+
+.option {
+    padding: 26px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+#userOption {
+    cursor: pointer;
+}
+
+.option:hover {
+    border-color: #b9cdf0;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.09);
+}
+
+.option h3 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+}
+
+.option p {
+    color: var(--muted);
+}
+
+#userForm {
+    display: none;
+    padding: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+#userForm form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+}
+
+#userForm .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+}
+
+#userForm .field label {
+    min-width: 0;
+    font-weight: 650;
+}
+
+#userForm input:not([type="checkbox"]):not([type="file"]),
+#userForm select,
+#userForm textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    color: var(--text);
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font: inherit;
+}
+
+#userForm input[type="file"] {
+    max-width: 100%;
+    padding: 9px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+#userForm input:focus,
+#userForm select:focus,
+#userForm textarea:focus {
+    border-color: var(--primary);
+    outline: 3px solid rgba(23, 78, 166, 0.13);
+}
+
+#pidFields,
+#mdlFields {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 20px;
+    margin-top: 8px;
+    padding: 24px;
+    background: #fbfcfe;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+#pidFields[style*="display: none"],
+#mdlFields[style*="display: none"] {
+    display: none !important;
+}
+
+#pidFields h3,
+#mdlFields h3,
+#pidFields > p,
+#mdlFields > p,
+#pidFields .privileges,
+#mdlFields .privileges {
+    grid-column: 1 / -1;
+}
+
+#pidFields h3,
+#mdlFields h3 {
+    margin: 8px 0 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 1.1rem;
+}
+
+#userForm .privileges {
+    grid-column: 1 / -1;
+    margin: 8px 0;
+    padding: 18px;
+    background: var(--accent-bg);
+    border-radius: 10px;
+}
+
+#userForm .privileges p {
+    color: var(--muted);
+}
+
+#userForm .privileges label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 70px;
+    margin: 5px 14px 5px 0;
+    font-weight: 600;
+}
+
+#userForm input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+#userForm button,
+#selection button {
+    min-height: 46px;
+    padding: 10px 20px;
+    color: white;
+    background: var(--primary);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#userForm button:hover,
+#selection button:hover {
+    background: var(--primary-hover);
+}
+
+#userForm #submitButton {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 8px;
+}
+
+#selection .option button {
+    margin-top: 12px;
+}
+
+#userForm br {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    #selection {
+        grid-template-columns: 1fr;
+    }
+
+    #selection > h1,
+    #selection > h2,
+    #selection > p {
+        grid-column: 1;
+    }
+
+    #userForm {
+        padding: 20px;
+    }
+
+    #userForm form,
+    #pidFields,
+    #mdlFields {
+        grid-template-columns: 1fr;
+    }
+
+    #pidFields,
+    #mdlFields {
+        padding: 16px;
+    }
 }
